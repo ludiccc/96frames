@@ -2,6 +2,8 @@
 
 //--------------------------------------------------------------
 void testApp::setup(){
+    cout << "Screen size: " << ofGetWidth() << " x " << ofGetHeight() << std::endl;
+    ofHideCursor();
     desdeElPrincipio = false;
     //
     //kinect.init();
@@ -15,7 +17,7 @@ void testApp::setup(){
         camHeight = kinect.height;
         camWidth = kinect.width;
     } else {
-	
+        vidGrabber.listDevices();
         camWidth 		= 1024;	// try to grab at this size.
         camHeight 		= 768;
 	
@@ -25,6 +27,13 @@ void testApp::setup(){
         camWidth = vidGrabber.getWidth();
         camHeight = vidGrabber.getHeight();
     }
+    
+    preview0.setWidth(1024/2);
+    preview0.setHeight(768/2);
+    preview1.setWidth(1024/2);
+    preview1.setHeight(768/2);
+    
+    
 	cout << "W:" << camWidth << " H:" << camHeight <<std::endl;
     
 	videoInverted 	= new unsigned char[camWidth*camHeight*3];
@@ -40,18 +49,21 @@ void testApp::setup(){
 	rotation=0; //PI/2;
 	ghostMode = true;
 	_alphaValue = 255;
-	logos = true;
+	logos = false;
 	ultimoGrafo = 0;
 	nextSaveIdx = 0;
 	showAnimacion = true;	
 	showCaptura = true;
+    justPreview = true;
+    reportFrames = false;
+    
 	
 	myFont.loadFont("Chalet Tokyo.otf", 12);
 
 	ofBackground(0,0,0);
 	ofEnableAlphaBlending();
-	dibujarCartelon = true;
-	cartelon.loadImage("CartelonEstacion96.jpg");
+	dibujarCartelon = false;
+	cartelon.loadImage("CartelonMaisanto.jpg");
 	ofSetWindowPosition(1260,-160);
     //ofSetWindow
 	//ofSetFullscreen(true);
@@ -63,23 +75,32 @@ void testApp::setup(){
 //--------------------------------------------------------------
 void testApp::draw(){
 	if (dibujarCartelon) {
-		cartelon.draw(0,0);
+		if (cartelon.bAllocated()) cartelon.draw(0,0);
+        else ofBackground(0,0,0);
 		return;
 	}
-    //ofTranslate(0,20);
-	if (modo == 3) dibujarAnimacionFrameAFrame(1);
-	else dibujarAnimacion(1);
-	if (showCaptura) {
-		dibujarCaptura(0);
-		//dibujarCaptura(2);
-	}
+    
+    if (justPreview) {
+        dibujarCaptura(-1);
+    } else {
+        //ofTranslate(0,20);
+
+        if (modo == 3) dibujarAnimacionFrameAFrame(0);
+        else dibujarAnimacion(0);
+        if (showCaptura) {
+            dibujarCaptura(1);
+            //dibujarCaptura(2);
+        }
+    }
 
 
 	if (!fullscreen) {
 		char reportStr[512];
-		ofSetColor(128+64);
-        sprintf(reportStr, "Capturados %i frames. Mostrando el frame %i. ", (int)grafos.size(), currentImg+1);
-        myFont.drawString(reportStr, 20, ofGetHeight()-10);
+        if (reportFrames) {
+            ofSetColor(128+64);
+            sprintf(reportStr, "Capturados %i frames. Mostrando el frame %i. ", (int)grafos.size(), currentImg+1);
+            myFont.drawString(reportStr, 20, ofGetHeight()-10);
+        }
 	
 		if (logos) {
 			//fill(255);
@@ -96,7 +117,7 @@ void testApp::draw(){
         ofSetColor(255);
         if (showHelp) {
             ofSetColor(255);
-            sprintf(reportStr, "'h': esta ayuda\n' ' : capturar un frame\n'b' : empezar desde 0\n'p' : dibujar cartelon\n'd' : borrar la œltima captura\nLEFT: ida y vuelta\nRIGHT: ida\n'1' : modo 2\n'2' : modo 3\n's' : swap screens\n'c' : show capture\n'f' : fullscreen\n'r' : rotar captura\n'g' : toggle ghost mode\na/s : alpha -/+\n'l' : show logos\n'P' : show animacion\n'm' : desde el principio toggle");
+            sprintf(reportStr, "'h': esta ayuda\n' ' : capturar un frame\n'b' : empezar desde 0\n'p' : dibujar cartelon\n'd' : borrar la œltima captura\nLEFT: ida y vuelta\nRIGHT: ida\n'0' : solo el PREVIEW.\n'1' : modo 2\n'2' : modo 3\n's' : swap screens\n'c' : show capture\n'f' : fullscreen\n'r' : rotar captura\n'g' : toggle ghost mode\na/s : alpha -/+\n'l' : show logos\n'P' : show animacion\n'm' : desde el principio toggle");
             myFont.drawString(reportStr, 300, 400);
         }
 	}
@@ -152,26 +173,41 @@ void testApp::dibujarAnimacion(int pantalla) {
 void testApp::dibujarCaptura(int pantalla) {
     if (fullscreen) return;
 
-    
-    ofPushMatrix();
-    ofTranslate(ofGetWidth()/4-frameWidth/2, ofGetHeight()/2-frameHeight/2);
-    ofTranslate(frameWidth/2, frameHeight/2);
-    
-    ofRotateZ(rotation);
-    
-    ofTranslate(-frameWidth/2, -frameHeight/2);
+    if (pantalla == -1) {
+        ofPushMatrix();
+        ofTranslate(frameWidth/2, frameHeight/2);
+        ofRotateZ(rotation);
+        ofTranslate(-frameWidth/2, -frameHeight/2);
 
-    ofSetHexColor(0xffffff);
-    //ofRect(-1,-1, frameWidth+2, frameHeight+2);
+        ofSetHexColor(0xffffff);
+        //ofRect(-1,-1, frameWidth+2, frameHeight+2);
+                
+        if (isKinect) kinect.draw(0,0, frameWidth, frameHeight);
+        else vidGrabber.draw(0, 0, frameWidth, frameHeight);
 
-    if (isKinect) kinect.draw(0,0, frameWidth, frameHeight);
-    else vidGrabber.draw(0, 0, frameWidth, frameHeight);
+        ofPopMatrix();
+    } else {
     
-    if (ghostMode && grafos.size() > 0) {
-        ofSetColor(255, 255, 255, 80);
-        grafos[grafos.size()-1].draw(0,0, frameWidth, frameHeight);
+        ofPushMatrix();
+        ofTranslate(ofGetWidth()/4-frameWidth/2, ofGetHeight()/2-frameHeight/2);
+        ofTranslate(frameWidth/2, frameHeight/2);
+        
+        ofRotateZ(rotation);
+        
+        ofTranslate(-frameWidth/2, -frameHeight/2);
+
+        ofSetHexColor(0xffffff);
+        //ofRect(-1,-1, frameWidth+2, frameHeight+2);
+
+        if (isKinect) kinect.draw(0,0, frameWidth, frameHeight);
+        else vidGrabber.draw(0, 0, frameWidth, frameHeight);
+        
+        if (ghostMode && grafos.size() > 0) {
+            ofSetColor(255, 255, 255, 80);
+            grafos[grafos.size()-1].draw(0,0, frameWidth, frameHeight);
+        }
+        ofPopMatrix();
     }
-    ofPopMatrix();
 	
 }
 
@@ -209,18 +245,18 @@ void testApp::prepararProximoFrame()
 void testApp::setFrameSize() {
 	
 	if (rotation == 90 || rotation == 270) {
-		frameHeight = (fullscreen)?ofGetHeight():min(ofGetHeight(), camHeight);
+		frameHeight = (fullscreen || justPreview)?ofGetHeight():min(ofGetHeight(), camHeight);
 		frameWidth = frameHeight*camWidth/camHeight;
         if (frameWidth > ofGetWidth()) {
-            frameWidth = (fullscreen)?ofGetWidth():min(ofGetWidth()/2, camWidth);
+            frameWidth = (fullscreen || justPreview)?ofGetWidth():min(ofGetWidth()/2, camWidth);
             frameHeight = camHeight*frameWidth/camWidth;
         }
 	}
 	else {
-		frameWidth = (fullscreen)?ofGetWidth():min(ofGetWidth()/2, camWidth);
+		frameWidth = (fullscreen || justPreview)?ofGetWidth():min(ofGetWidth()/2, camWidth);
 		frameHeight = camHeight*frameWidth/camWidth;
         if (frameHeight > ofGetHeight()) {
-            frameHeight = (fullscreen)?ofGetHeight():min(ofGetHeight(), camHeight);
+            frameHeight = (fullscreen || justPreview)?ofGetHeight():min(ofGetHeight(), camHeight);
             frameWidth = frameHeight*camWidth/camHeight;
         }
 	}
@@ -273,7 +309,10 @@ void testApp::keyPressed  (int key){
 	// they come up *under* the fullscreen window
 	// use alt-tab to navigate to the settings
 	// window. we are working on a fix for this...
-    
+    if (key == 'o') {
+        projectionMode++;
+        if (projectionMode > 3) projectionMode = 0;
+    }
 	if (key == 'p') {
 		dibujarCartelon = !dibujarCartelon;
 	} else if (key == 's' || key == 'S'){
@@ -327,8 +366,22 @@ void testApp::keyPressed  (int key){
 		modo = 1;
 		direccion = 1;
         currentImg = grafos.size()-1;
-	} 
-	else if (key == '1') {
+	}
+	else if (key == '0') {
+        //justPreview = !justPreview;
+        justPreview = true;
+        setFrameSize();
+        //fullscreen = true;
+        //showAnimacion = false;
+	} else if (key == '9') {
+        justPreview = false;
+        fullscreen = false;
+        showCaptura = true;
+        showAnimacion = true;
+        reportFrames = false;
+        modo = 0;
+        setFrameSize();
+    } else if (key == '1') {
 		modo = 2;
 	} else if (key == '2') {
 		modo = 3;
@@ -349,6 +402,7 @@ void testApp::keyPressed  (int key){
 		else rotation = 0;
         setFrameSize();
 	}
+	else if (key == 'R') reportFrames = !reportFrames;
 	else if (key == 'g') ghostMode = !ghostMode;
 	else if (key == 'a') {
 		_alphaValue = MAX(0, _alphaValue-1);

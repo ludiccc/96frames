@@ -1,0 +1,4 @@
+.DS_Store
+*.app
+*.tif
+96frames_kinect.xcodeproj/*

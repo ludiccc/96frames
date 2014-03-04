@@ -5,6 +5,7 @@
 #include <time.h>
 #include "ofMain.h"
 #include "ofxKinect.h"
+
 #define MAX_FRAMES 96
 #define LOOP_FRAMES 7
 
@@ -52,25 +53,32 @@ class testApp : public ofBaseApp{
 	/*** Espec’ficos del 96 frames ***/
 	// Lo siguiente es la cantidad de frames en el buffer y sobre lo que va a hacer el loop
 	vector <ofTexture> grafos;
-	
-	int currentImg;
-	int direccion;
-	int maxImg;
-	int captureIdx;
+
+    ofImage cartelon;
+
 	double nextFrame;
-	int modo;
-	bool fullscreen;
-	float rotation; //PI/2;
-	bool ghostMode;
-	float _alphaValue;
-	bool logos;
-	bool showAnimacion;	
-	bool showCaptura;
-	int ultimoGrafo;
-	int nextSaveIdx;
-    bool desdeElPrincipio;
-	
-	bool dibujarCartelon;
-	ofImage cartelon;
-	
+
+	int     currentImg;
+	int     direccion;
+	int     maxImg;
+	int     captureIdx;
+	int     ultimoGrafo;
+	int     nextSaveIdx;
+
+    ofRectangle preview0, preview1;
+    
+	int     modo;
+	float   rotation; //PI/2;
+	float   _alphaValue;
+    
+	bool    logos;
+	bool    fullscreen;
+    bool    justPreview;
+    bool    projectionMode;
+	bool    ghostMode;
+    bool    desdeElPrincipio;
+	bool    showAnimacion;
+	bool    showCaptura;
+	bool    dibujarCartelon;
+    bool    reportFrames;
 };
