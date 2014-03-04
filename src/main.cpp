@@ -1,3 +1,6 @@
+/*
+	96 frames by Federico Joselevich Puiggrós
+*/
 #include "ofMain.h"
 #include "testApp.h"
 #include "ofAppGlutWindow.h"

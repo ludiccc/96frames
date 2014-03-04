@@ -2,3 +2,4 @@
 *.app
 *.tif
 96frames_kinect.xcodeproj/*
+bin/*
